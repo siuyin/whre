@@ -79,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             Text(
-              'Entered: ${DateFormat.jms().format(startTime)}, ${duration()} ago.',
+              'Entered: ${DateFormat.jms().format(startTime)}\n${duration()} ago.',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
           ],
