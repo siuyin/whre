@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:location/location.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,7 +37,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String location = "";
   DateTime startTime = DateTime.now();
   String duration() {
     final dur = DateTime.now().difference(startTime);
@@ -46,10 +46,41 @@ class _MyHomePageState extends State<MyHomePage> {
     return '$hh:$mm:$ss';
   }
 
+  Location geoLoc = Location();
+  final TextEditingController _locController = TextEditingController();
+
+  getLoc() async {
+    final loc = await geoLoc.getLocation();
+    _locController.text = '${loc.latitude},${loc.longitude}';
+    startTime = DateTime.now();
+  }
+
+  getGeoLoc() async {
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+
+    serviceEnabled = await geoLoc.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await geoLoc.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
+    }
+
+    permissionGranted = await geoLoc.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await geoLoc.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     Timer.periodic(const Duration(seconds: 1), (timer) => setState(() {}));
+    // getGeoLoc();
   }
 
   @override
@@ -63,27 +94,60 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            SizedBox(
-              width: 256,
-              child: TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                ),
-                style: Theme.of(context).textTheme.displaySmall,
-                onSubmitted: (value) {
-                  setState(() {
-                    location = value;
-                    startTime = DateTime.now();
-                  });
-                },
-              ),
-            ),
-            Text(
-              'Entered: ${DateFormat.jms().format(startTime)}\n${duration()} ago.',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            parkedLoc(context),
+            timingInfo(context),
           ],
         ),
+      ),
+    );
+  }
+
+  Text timingInfo(BuildContext context) {
+    return Text(
+      'Entered: ${DateFormat.jms().format(startTime)}\n${duration()} ago.',
+      style: Theme.of(context).textTheme.bodyLarge,
+    );
+  }
+
+  SizedBox parkedLoc(BuildContext context) {
+    return SizedBox(
+      width: 400,
+      child: Row(
+        children: [
+          locationTextField(context),
+          getLocationIconButton(),
+        ],
+      ),
+    );
+  }
+
+  Flexible getLocationIconButton() {
+    return Flexible(
+      flex: 2,
+      child: IconButton(
+        onPressed: () {
+          getLoc();
+        },
+        icon: const Icon(Icons.location_on),
+        tooltip: 'capture latitude & longitude to paste into Google Maps',
+      ),
+    );
+  }
+
+  Flexible locationTextField(BuildContext context) {
+    return Flexible(
+      flex: 8,
+      child: TextField(
+        decoration: const InputDecoration(
+          labelText: 'Location',
+        ),
+        style: Theme.of(context).textTheme.headlineSmall,
+        onSubmitted: (_) {
+          setState(() {
+            startTime = DateTime.now();
+          });
+        },
+        controller: _locController,
       ),
     );
   }
