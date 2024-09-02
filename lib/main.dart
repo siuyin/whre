@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
     startTime = DateTime.now();
   }
 
-  getGeoLoc() async {
+  checkLocationService() async {
     bool serviceEnabled;
     PermissionStatus permissionGranted;
 
@@ -74,13 +74,14 @@ class _MyHomePageState extends State<MyHomePage> {
         return;
       }
     }
+    await geoLoc.getLocation();
   }
 
   @override
   void initState() {
     super.initState();
     Timer.periodic(const Duration(seconds: 1), (timer) => setState(() {}));
-    // getGeoLoc();
+    checkLocationService();
   }
 
   @override
@@ -111,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   SizedBox parkedLoc(BuildContext context) {
     return SizedBox(
-      width: 400,
+      width: 360,
       child: Row(
         children: [
           locationTextField(context),
@@ -123,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Flexible getLocationIconButton() {
     return Flexible(
-      flex: 2,
+      flex: 1,
       child: IconButton(
         onPressed: () {
           getLoc();
@@ -136,18 +137,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Flexible locationTextField(BuildContext context) {
     return Flexible(
-      flex: 8,
-      child: TextField(
-        decoration: const InputDecoration(
-          labelText: 'Location',
+      flex: 9,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: TextField(
+          decoration: const InputDecoration(
+            labelText: 'Location',
+          ),
+          style: Theme.of(context).textTheme.headlineSmall,
+          onSubmitted: (_) {
+            setState(() {
+              startTime = DateTime.now();
+            });
+          },
+          controller: _locController,
         ),
-        style: Theme.of(context).textTheme.headlineSmall,
-        onSubmitted: (_) {
-          setState(() {
-            startTime = DateTime.now();
-          });
-        },
-        controller: _locController,
       ),
     );
   }
