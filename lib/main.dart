@@ -5,13 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:location/location.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-late final SharedPreferencesWithCache prefs;
-void main() async {
-  prefs = await SharedPreferencesWithCache.create(
-    cacheOptions: const SharedPreferencesWithCacheOptions(
-      allowList: <String>{'location', 'startTime'},
-    ),
-  );
+void main() {
   runApp(const MyApp());
 }
 
@@ -44,6 +38,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final Future<SharedPreferencesWithCache> _prefs =
+      SharedPreferencesWithCache.create(
+    cacheOptions: const SharedPreferencesWithCacheOptions(
+      allowList: <String>{'location', 'startTime'},
+    ),
+  );
+
   DateTime startTime = DateTime.now();
   String duration() {
     final dur = DateTime.now().difference(startTime);
@@ -92,7 +93,8 @@ class _MyHomePageState extends State<MyHomePage> {
     restoreLoc();
   }
 
-  restoreLoc() {
+  restoreLoc() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
     final String? savedLoc = prefs.getString('location');
     _locController.text = savedLoc ?? '';
 
@@ -104,6 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   saveLoc() async {
+    final SharedPreferencesWithCache prefs = await _prefs;
     await prefs.setString('location', _locController.text);
     setState(() {
       startTime = DateTime.now();
