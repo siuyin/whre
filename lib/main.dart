@@ -3,8 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+late final SharedPreferencesWithCache prefs;
+void main() async {
+  prefs = await SharedPreferencesWithCache.create(
+    cacheOptions: const SharedPreferencesWithCacheOptions(
+      allowList: <String>{'location', 'startTime'},
+    ),
+  );
   runApp(const MyApp());
 }
 
@@ -52,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
   getLoc() async {
     final loc = await geoLoc.getLocation();
     _locController.text = '${loc.latitude},${loc.longitude}';
-    startTime = DateTime.now();
+    saveLoc();
   }
 
   checkLocationService() async {
@@ -82,6 +89,26 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     Timer.periodic(const Duration(seconds: 1), (timer) => setState(() {}));
     checkLocationService();
+    restoreLoc();
+  }
+
+  restoreLoc() {
+    final String? savedLoc = prefs.getString('location');
+    _locController.text = savedLoc ?? '';
+
+    final int? savedTime = prefs.getInt('startTime');
+    if (savedTime == null) return;
+    startTime = DateTime.fromMillisecondsSinceEpoch(savedTime);
+
+    setState(() {});
+  }
+
+  saveLoc() async {
+    await prefs.setString('location', _locController.text);
+    setState(() {
+      startTime = DateTime.now();
+    });
+    await prefs.setInt('startTime', startTime.millisecondsSinceEpoch);
   }
 
   @override
@@ -146,9 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           style: Theme.of(context).textTheme.headlineSmall,
           onSubmitted: (_) {
-            setState(() {
-              startTime = DateTime.now();
-            });
+            saveLoc();
           },
           controller: _locController,
         ),
